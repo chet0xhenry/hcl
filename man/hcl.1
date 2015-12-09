@@ -1,0 +1,251 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "HCL" "1" "December 2015" "" ""
+.
+.SH "NAME"
+\fBhcl\fR \- Track time with Harvest time sheets
+.
+.SH "SYNOPSIS"
+.
+.nf
+
+hcl [start] @<task_alias> [+<time>] [<message>]
+hcl note <message>
+hcl stop [<message>]
+hcl resume [@<task_alias>]
+hcl log @<task_alias> [+<time>] [<message>]
+hcl show [<date>]
+hcl tasks [<project_code>]
+hcl alias <task_alias> <project_id> <task_id>
+hcl unalias <task_alias>
+hcl aliases
+hcl (cancel | nvm | oops)
+hcl config
+hcl status
+.
+.fi
+.
+.SH "DESCRIPTION"
+.
+.SS "Available Projects and Tasks"
+To start a new timer you need to identify the project and task\. The tasks command displays a list of available tasks with their project and task IDs\.
+.
+.IP "" 4
+.
+.nf
+
+hcl tasks
+.
+.fi
+.
+.IP "" 0
+.
+.P
+You can also pass a project code (this is the short optional code associated with each project) to list only the tasks for that project\.
+.
+.SS "Starting a Timer"
+Since it\'s not practical to enter two long numbers every time you want to identify a task, HCl supports task aliases:
+.
+.IP "" 4
+.
+.nf
+
+hcl alias tacodev 1234 5678
+hcl @tacodev Adding a new feature
+.
+.fi
+.
+.IP "" 0
+.
+.SS "Starting a Timer with Initial Time"
+You can also provide an initial time when starting a new timer\. This can be expressed in floating\-point or HH:MM\. The following two commands are equivalent:
+.
+.IP "" 4
+.
+.nf
+
+hcl @tacodev +0:15 Doing some stuff
+hcl +\.25 @tacodev Doing some stuff
+.
+.fi
+.
+.IP "" 0
+.
+.SS "Adding Notes to a Running Task"
+While a task is running you can append lines to the task notes:
+.
+.IP "" 4
+.
+.nf
+
+hcl note Then I did something else
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fBNote\fR that \fBshow\fR only displays the last line of the timer notes\. You can list all the notes for a running timer by issuing the note command without any arguments:
+.
+.IP "" 4
+.
+.nf
+
+hcl note
+.
+.fi
+.
+.IP "" 0
+.
+.SS "Stopping a Timer"
+The following command will stop a running timer (currently only one timer at a time is supported)\. You can provide a message when stopping a timer as well:
+.
+.IP "" 4
+.
+.nf
+
+hcl stop All done doing things
+.
+.fi
+.
+.IP "" 0
+.
+.SS "Resuming a Timer"
+You can resume a stopped timer\. Specify a task to resume the last timer for that task:
+.
+.IP "" 4
+.
+.nf
+
+hcl resume
+hcl resume @xdev
+.
+.fi
+.
+.IP "" 0
+.
+.SS "Canceling a Timer"
+If you accidentally started a timer that you didn\'t mean to, you can cancel it:
+.
+.IP "" 4
+.
+.nf
+
+hcl cancel
+.
+.fi
+.
+.IP "" 0
+.
+.P
+This will delete the running timer, or the last\-updated timer if one isn\'t running\. You can also use \fBnvm\fR or \fBoops\fR instead of \fBcancel\fR\.
+.
+.SS "Logging without Starting a Timer"
+You can log time and notes without leaving a timer running\. It takes the same arguments as start:
+.
+.IP "" 4
+.
+.nf
+
+hcl log @xdev +1 Worked for an hour\.
+.
+.fi
+.
+.IP "" 0
+.
+.P
+The above starts and immediately stops a one\-hour timer with the given note\.
+.
+.SH "ADVANCED USAGE"
+.
+.SS "Bash Tab Completions"
+You can enable auto\-completion of commands, project ids, task ids and task aliases by adding this to your shell configuration:
+.
+.IP "" 4
+.
+.nf
+
+source _hcl_completions
+.
+.fi
+.
+.IP "" 0
+.
+.SS "Configuration Profiles"
+You can modify your credentials with the \fB\-\-reauth\fR option, and review them with \fBhcl config\fR\. If you\'d rather store multiple configurations at once, specify an alternate configuration directory in the environment as \fBHCL_DIR\fR\. This can be used to interact with multiple harvest accounts at once\.
+.
+.P
+Here is a shell alias \fBmyhcl\fR with a separate configuration from the main \fBhcl\fR command, tab completion will work with the alias automatically:
+.
+.IP "" 4
+.
+.nf
+
+alias myhcl="env HCL_DIR=~/\.myhcl hcl"
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Adding something like the above to your bashrc will enable a new command, \fBmyhcl\fR\. When using \fBmyhcl\fR you can use different credentials and aliases, while \fBhcl\fR will continue to function with your original configuration\.
+.
+.SS "Interactive Console"
+An interactive Ruby console is provided to allow you to use the fairly powerful Harvest API client built into HCl, since not all of its features are exposed via the command line\. The current {HCl::App} instance is available as \fBhcl\fR\.
+.
+.P
+It\'s also possible to issue HCl commands directly (except \fBalias\fR, see below), or to query specific JSON end points and have the results pretty\-printed:
+.
+.IP "" 4
+.
+.nf
+
+hcl console
+hcl> show "yesterday"
+# => prints yesterday\'s timesheet, note the quotes!
+hcl> hcl\.http\.get(\'daily\')
+# => displays a pretty\-printed version of the JSON output
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Note that the HCl internals may change without notice\. Also, commands (like \fBalias\fR) that are also reserved words in Ruby can\'t be issued directly (use \fBsend :alias\fR instead)\.
+.
+.SS "Date Formats"
+Dates can be expressed in a variety of ways\. See the Chronic documentation \fIhttp://chronic\.rubyforge\.org/\fR for more information about available date input formats\. The following commands show the time sheet for the specified day:
+.
+.IP "" 4
+.
+.nf
+
+hcl show yesterday
+hcl show last friday
+hcl show 2 days ago
+hcl show 1 week ago
+.
+.fi
+.
+.IP "" 0
+.
+.SS "Harvest service status"
+Harvest provides a status API \fIhttp://harveststatus\.com\fR, which you can query using the \fBhcl status\fR command\. This will tell you whether Harvest itself is up, along with a timestamp of when it was last tested\.
+.
+.SH "AUTHOR"
+HCl was designed and implemented by Zack Hobson \fIhttp://github\.com/zenhob\fR\.
+.
+.IP "\(bu" 4
+Non\-SSL support by Michael Bleigh \fIhttp://github\.com/mbleigh\fR\.
+.
+.IP "\(bu" 4
+Resume command by Brian Cooke \fIhttp://github\.com/bricooke\fR\.
+.
+.IP "\(bu" 4
+UI improvements by Chris Scharf \fIhttp://github\.com/scharfie\fR\.
+.
+.IP "" 0
+.
+.P
+See LICENSE for copyright details\.
